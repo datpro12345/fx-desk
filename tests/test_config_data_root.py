@@ -37,39 +37,23 @@ def test_project_root_defaults_to_repo_without_env(monkeypatch: pytest.MonkeyPat
     assert mod.project_root_for_data() == mod.REPO_ROOT
 
 
-def _weekly_job_mart_dir(argv: list[str], env: dict[str, str]) -> Path:
-    code = (
-        "import sys; sys.argv = ['run_weekly_abcd.py', *sys.argv[1:]]; "
-        "import scripts.run_weekly_abcd; "
-        "from scripts.extract.config import GOLD_MART_DIR; print(GOLD_MART_DIR)"
-    )
-    result = subprocess.run(
-        [sys.executable, "-c", code, *argv],
-        cwd=REPO_ROOT,
-        env=env,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return Path(result.stdout.strip().splitlines()[-1])
-
-
-def test_weekly_job_data_root_flag_overrides_env(tmp_path: Path):
-    flag_root = tmp_path / "flag"
-    env = {
-        **os.environ,
-        "FX_DESK_DATA_ROOT": str(tmp_path / "shell"),
-        "FX_DESK_DOTENV": str(tmp_path / "missing.env"),
-    }
-    mart = _weekly_job_mart_dir(["--data-root", str(flag_root)], env)
-    assert mart == flag_root.resolve() / "data" / "gold" / "mart"
-
-
 def test_weekly_job_reads_data_root_from_dotenv(tmp_path: Path):
     env_root = tmp_path / "from-dotenv"
     dotenv = tmp_path / ".env"
     dotenv.write_text(f"FX_DESK_DATA_ROOT={env_root}\n")
     env = {k: v for k, v in os.environ.items() if k != "FX_DESK_DATA_ROOT"}
     env["FX_DESK_DOTENV"] = str(dotenv)
-    mart = _weekly_job_mart_dir([], env)
+    code = (
+        "import scripts.run_weekly_abcd; "
+        "from scripts.extract.config import GOLD_MART_DIR; print(GOLD_MART_DIR)"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=REPO_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    mart = Path(result.stdout.strip().splitlines()[-1])
     assert mart == env_root.resolve() / "data" / "gold" / "mart"

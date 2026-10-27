@@ -31,19 +31,8 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.analyst.llm_client import load_dotenv
 
 
-def _bootstrap_env() -> None:
-    for i, arg in enumerate(sys.argv):
-        if arg == "--data-root" and i + 1 < len(sys.argv):
-            os.environ["FX_DESK_DATA_ROOT"] = str(Path(sys.argv[i + 1]).expanduser().resolve())
-            break
-        if arg.startswith("--data-root="):
-            os.environ["FX_DESK_DATA_ROOT"] = str(Path(arg.split("=", 1)[1]).expanduser().resolve())
-            break
-    dotenv_path = os.environ.get("FX_DESK_DOTENV", "").strip()
-    load_dotenv(Path(dotenv_path) if dotenv_path else None)
-
-
-_bootstrap_env()
+_dotenv_path = os.environ.get("FX_DESK_DOTENV", "").strip()
+load_dotenv(Path(_dotenv_path) if _dotenv_path else None)
 
 try:
     from scripts.analyst.ict_fact_pack import run_ict_pipeline
@@ -291,11 +280,6 @@ def main() -> int:
         "--lang",
         default=os.environ.get("REPORT_LANG", DEFAULT_LANG),
         help="Report language: vi, en, or any name (ja, es, …). Default: vi or REPORT_LANG",
-    )
-    parser.add_argument(
-        "--data-root",
-        type=Path,
-        help="Project root whose data/ tree to use (default: repo root or FX_DESK_DATA_ROOT)",
     )
     parser.add_argument("--reports-dir", type=Path)
     parser.add_argument("--mart-dir", type=Path, default=GOLD_MART_DIR)

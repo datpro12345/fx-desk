@@ -53,7 +53,7 @@ Output with `--with-llm`: `reports/weekly/{YYYY}-W{WW}-macro-outlook.{lang}.md`
 
 When `FM_OPENROUTER_TOOLS` is unset, the weekly outlook uses the local fallback list in `scripts/analyst/llm_client.py`.
 
-To keep code in one checkout and `data/` + `reports/` elsewhere (for example a separate data repo), set `FX_DESK_DATA_ROOT` to that project root or pass `--data-root`. Point `FX_DESK_DOTENV` at the `.env` that holds API keys.
+To keep code in one checkout and `data/` + `reports/` elsewhere (for example a separate data repo), export `FX_DESK_DATA_ROOT` to that project root before starting Python. Point `FX_DESK_DOTENV` at the `.env` that holds API keys.
 
 ## Layout
 
