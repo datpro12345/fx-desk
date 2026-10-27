@@ -14,7 +14,7 @@ services:
     environment:
       TZ: Asia/Ho_Chi_Minh
       LLM_PROVIDER: ${LLM_PROVIDER:-openrouter}
-      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-inclusionai/ling-3.0-flash-fin:free}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       REPORT_LANG: ${REPORT_LANG:-en}
     volumes:
       - ./data:/app/data

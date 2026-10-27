@@ -22,7 +22,7 @@ Mở `.env` và điền:
 |---|---|---|
 | `OPENROUTER_API_KEY` | **Có** (nếu viết báo cáo) | Key tại [openrouter.ai/keys](https://openrouter.ai/keys) |
 | `LLM_PROVIDER` | Có | `openrouter` (mặc định) |
-| `OPENROUTER_MODEL` | Không | `inclusionai/ling-3.0-flash-fin:free` — dự phòng `minimax/minimax-m3:free` |
+| `OPENROUTER_MODEL` | Không | Để trống. Nếu điền, model này được thử sau danh sách dự phòng. Docker dùng danh sách dự phòng trong `scripts/analyst/llm_client.py`, trừ khi `FM_OPENROUTER_TOOLS` trỏ tới bản router đã mount |
 | `GEMINI_API_KEY` / `GEMINI_MODEL` | Chỉ khi `LLM_PROVIDER=google` | Key tại [Google AI Studio](https://aistudio.google.com/app/apikey) |
 | `REPORT_LANG` | Không | `en` (mặc định trên Docker) hoặc `vi`. CLI: `--lang en` |
 | `TZ` | Không | `Asia/Ho_Chi_Minh` (compose đã set) |
@@ -159,7 +159,7 @@ docker compose run --rm -e REPORT_LANG=en weekly python scripts/run_weekly_abcd.
 docker compose run --rm -e REPORT_LANG=en weekly python scripts/run_weekly_abcd.py --skip-fetch --dry-run
 
 # Đổi model / ngôn ngữ (không sửa .env)
-docker compose run --rm weekly python scripts/run_weekly_abcd.py --lang vi --model 'minimax/minimax-m3:free'
+docker compose run --rm weekly python scripts/run_weekly_abcd.py --lang vi --model 'google/gemma-4-31b-it:free'
 
 # Shell trong container
 docker compose run --rm --entrypoint bash weekly
@@ -182,7 +182,7 @@ Volume `./data` và `./reports` ghi thẳng ra host — xóa container không m�
 | Hiện tượng | Cách xử |
 |---|---|
 | `OPENROUTER_API_KEY is missing` | `.env` chưa có, hoặc compose không thấy file (chạy đúng thư mục repo) |
-| OpenRouter HTTP 404 model | Slug `:free` chết. Đổi `OPENROUTER_MODEL` sang `inclusionai/ling-3.0-flash-fin:free` hoặc `minimax/minimax-m3:free` |
+| OpenRouter HTTP 404 model | Slug `:free` chết. Xoá `OPENROUTER_MODEL` trong `.env`, hoặc sửa `PREFERRED_OPENROUTER_MODELS` trong `scripts/analyst/llm_client.py` |
 | Fetch weekly 429 | Đợi 5 phút. Đừng thêm `--fallback-formats` |
 | Fetch weekly TLS / timeout | Oracle egress OK thì thử lại; không bật WARP cho đường này |
 | `no such file .env` | `cp .env.template .env` trước `compose run` |
