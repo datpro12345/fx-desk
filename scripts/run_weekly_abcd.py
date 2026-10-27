@@ -24,21 +24,26 @@ import sys
 from pathlib import Path
 
 
-def _bootstrap_data_root_from_argv() -> None:
-    for i, arg in enumerate(sys.argv):
-        if arg == "--data-root" and i + 1 < len(sys.argv):
-            os.environ.setdefault("FX_DESK_DATA_ROOT", sys.argv[i + 1])
-            return
-        if arg.startswith("--data-root="):
-            os.environ.setdefault("FX_DESK_DATA_ROOT", arg.split("=", 1)[1])
-            return
-
-
-_bootstrap_data_root_from_argv()
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+from scripts.analyst.llm_client import load_dotenv
+
+
+def _bootstrap_env() -> None:
+    for i, arg in enumerate(sys.argv):
+        if arg == "--data-root" and i + 1 < len(sys.argv):
+            os.environ["FX_DESK_DATA_ROOT"] = str(Path(sys.argv[i + 1]).expanduser().resolve())
+            break
+        if arg.startswith("--data-root="):
+            os.environ["FX_DESK_DATA_ROOT"] = str(Path(arg.split("=", 1)[1]).expanduser().resolve())
+            break
+    dotenv_path = os.environ.get("FX_DESK_DOTENV", "").strip()
+    load_dotenv(Path(dotenv_path) if dotenv_path else None)
+
+
+_bootstrap_env()
 
 try:
     from scripts.analyst.ict_fact_pack import run_ict_pipeline
@@ -46,10 +51,9 @@ except ImportError:
     run_ict_pipeline = None
 
 from scripts.analyst.language import DEFAULT_LANG
-from scripts.analyst.llm_client import load_dotenv
 from scripts.analyst.run_weekly_report import current_iso_week, run_outlook
 from scripts.extract.backfill_actuals import backfill_actuals
-from scripts.extract.config import GOLD_MART_DIR
+from scripts.extract.config import GOLD_MART_DIR, project_root_for_data
 from scripts.extract.fetch_weekly import fetch_this_week
 from scripts.transform.validate_coverage import check_impact_coverage
 from scripts.transform.to_google_calendar import DEFAULT_SOURCE_TZ
@@ -155,7 +159,7 @@ def run_abcd(
     iso_week = week if week is not None else int(summary["B"]["iso_week"])
     summary["week_label"] = f"{iso_year}-W{iso_week:02d}"
 
-    reports = reports_dir or (REPO_ROOT / "reports" / "weekly")
+    reports = reports_dir or (project_root_for_data() / "reports" / "weekly")
     institutional = None
     if skip_ict or run_ict_pipeline is None:
         summary["C0"] = {
@@ -231,8 +235,6 @@ def run_abcd(
 
 
 def main() -> int:
-    dotenv_path = os.environ.get("FX_DESK_DOTENV", "").strip()
-    load_dotenv(Path(dotenv_path) if dotenv_path else None)
     today_year, today_week = current_iso_week()
     parser = argparse.ArgumentParser(
         description="ABCD: fetch this week (no WARP) → mart → weekly outlook",
@@ -299,17 +301,6 @@ def main() -> int:
     parser.add_argument("--mart-dir", type=Path, default=GOLD_MART_DIR)
     args = parser.parse_args()
 
-    if args.data_root is not None:
-        os.environ["FX_DESK_DATA_ROOT"] = str(args.data_root.expanduser().resolve())
-
-    reports_dir = args.reports_dir
-    if reports_dir is None and os.environ.get("FX_DESK_DATA_ROOT", "").strip():
-        reports_dir = Path(os.environ["FX_DESK_DATA_ROOT"]).expanduser().resolve() / "reports" / "weekly"
-
-    mart_dir = args.mart_dir
-    if args.data_root is not None:
-        mart_dir = args.data_root.expanduser().resolve() / "data" / "gold" / "mart"
-
     try:
         summary = run_abcd(
             fmt=args.fmt,
@@ -332,8 +323,8 @@ def main() -> int:
             timeout=args.timeout,
             suffix=args.suffix,
             lang=args.lang,
-            reports_dir=reports_dir,
-            mart_dir=mart_dir,
+            reports_dir=args.reports_dir,
+            mart_dir=args.mart_dir,
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("ABCD stopped: %s", exc)
