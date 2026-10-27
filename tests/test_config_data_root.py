@@ -19,15 +19,17 @@ def fresh_config_module(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     sys.modules.pop("scripts.extract.config", None)
     mod = importlib.import_module("scripts.extract.config")
     yield mod
+    monkeypatch.delenv("FX_DESK_DATA_ROOT")
     sys.modules.pop("scripts.extract.config", None)
     importlib.import_module("scripts.extract.config")
 
 
-def test_project_root_for_data_honors_env(fresh_config_module):
+def test_project_root_for_data_honors_env(fresh_config_module, tmp_path: Path):
     mod = fresh_config_module
-    assert mod.project_root_for_data() == mod.project_root_for_data().resolve()
-    assert mod.GOLD_MART_DIR == mod.project_root_for_data() / "data" / "gold" / "mart"
-    assert mod.BRONZE_WEEKLY_DIR == mod.project_root_for_data() / "data" / "bronze" / "weekly"
+    root = tmp_path.resolve()
+    assert mod.project_root_for_data() == root
+    assert mod.GOLD_MART_DIR == root / "data" / "gold" / "mart"
+    assert mod.BRONZE_WEEKLY_DIR == root / "data" / "bronze" / "weekly"
 
 
 def test_project_root_defaults_to_repo_without_env(monkeypatch: pytest.MonkeyPatch):
