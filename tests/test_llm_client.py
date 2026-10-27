@@ -52,9 +52,52 @@ def test_complete_shared_router_honors_explicit_model():
         load_router.return_value = (fake_pick, lambda: fake_client)
         llm_client.complete("sys", "user", provider="openrouter", model="override:free")
 
-    models = fake_client.chat_completion.call_args.kwargs["models"]
-    assert models[0] == "override:free"
-    assert "a:free" in models
+    call_kw = fake_client.chat_completion.call_args.kwargs
+    assert call_kw["models"] == ["override:free", "a:free", "b:free"]
+    assert call_kw["allow_paid"] is False
+
+
+def _free_suffix_client(model_used: str) -> mock.Mock:
+    client = mock.Mock()
+    client.is_free_model.side_effect = lambda m: m.endswith(":free")
+    client.chat_completion.return_value = {"content": "ok", "model": model_used}
+    return client
+
+
+def test_complete_shared_router_puts_env_model_after_chain():
+    fake_client = _free_suffix_client("a:free")
+    fake_pick = mock.Mock(return_value=["a:free", "b:free"])
+
+    with (
+        mock.patch.object(llm_client, "_load_shared_openrouter") as load_router,
+        mock.patch.dict("os.environ", {"OPENROUTER_MODEL": "old/dead:free"}, clear=False),
+    ):
+        load_router.return_value = (fake_pick, lambda: fake_client)
+        llm_client.complete("sys", "user", provider="openrouter")
+
+    call_kw = fake_client.chat_completion.call_args.kwargs
+    assert call_kw["models"] == ["a:free", "b:free", "old/dead:free"]
+    assert call_kw["allow_paid"] is False
+
+
+@pytest.mark.parametrize("source", ["explicit", "env"])
+def test_complete_shared_router_allows_user_given_paid_model(source):
+    fake_client = _free_suffix_client("openai/gpt-4o-mini")
+    fake_pick = mock.Mock(return_value=["a:free"])
+    env = {"OPENROUTER_MODEL": "openai/gpt-4o-mini" if source == "env" else ""}
+    model = "openai/gpt-4o-mini" if source == "explicit" else None
+
+    with (
+        mock.patch.object(llm_client, "_load_shared_openrouter") as load_router,
+        mock.patch.dict("os.environ", env, clear=False),
+    ):
+        load_router.return_value = (fake_pick, lambda: fake_client)
+        _, _, used = llm_client.complete("sys", "user", provider="openrouter", model=model)
+
+    assert used == "openai/gpt-4o-mini"
+    call_kw = fake_client.chat_completion.call_args.kwargs
+    assert "openai/gpt-4o-mini" in call_kw["models"]
+    assert call_kw["allow_paid"] is True
 
 
 def test_load_shared_openrouter_warns_when_tools_dir_missing(caplog, tmp_path):

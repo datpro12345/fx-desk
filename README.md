@@ -54,8 +54,10 @@ Output with `--with-llm`: `reports/weekly/{YYYY}-W{WW}-macro-outlook.{lang}.md`
 | You fill in | Where |
 |---|---|
 | `OPENROUTER_API_KEY` | [openrouter.ai/keys](https://openrouter.ai/keys) |
-| `OPENROUTER_MODEL` | default `inclusionai/ling-3.0-flash-fin:free` (fallback MiniMax M3) |
+| `OPENROUTER_MODEL` | optional. Models come from the shared router at `FM_OPENROUTER_TOOLS`; this model is tried last |
 | `REPORT_LANG` | optional, `en` or `vi` |
+
+Docker runs use the local fallback list in `scripts/analyst/llm_client.py` unless `FM_OPENROUTER_TOOLS` points to a mounted copy of the shared router.
 
 Deploy on Windows Docker Desktop or an Oracle Always Free VM: **[docs/docker.md](docs/docker.md)**.
 

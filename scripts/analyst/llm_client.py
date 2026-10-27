@@ -9,7 +9,7 @@ import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 log = logging.getLogger(__name__)
 
@@ -99,29 +99,13 @@ def _load_shared_openrouter() -> tuple[Callable[[str], list[str]], Callable[[], 
 
 
 def _openrouter_model_candidates(
-    pick_chain: Callable[[str], list[str]],
+    chain: Iterable[str],
     *,
     explicit_model: str | None,
     env_model: str,
 ) -> list[str]:
-    chain = list(pick_chain(OPENROUTER_TASK_CLASS))
-    if explicit_model:
-        return [explicit_model] + [m for m in chain if m != explicit_model]
-    if env_model:
-        return [env_model] + [m for m in chain if m != env_model]
-    return chain
-
-
-def _legacy_openrouter_candidates(
-    *,
-    explicit_model: str | None,
-    env_model: str,
-) -> list[str]:
-    if explicit_model:
-        return [explicit_model]
-    if env_model:
-        return [env_model] + [m for m in PREFERRED_OPENROUTER_MODELS if m != env_model]
-    return list(PREFERRED_OPENROUTER_MODELS)
+    ordered = [explicit_model, *chain, env_model]
+    return list(dict.fromkeys(m for m in ordered if m))
 
 
 def _http_json(url: str, payload: dict, headers: dict, timeout: int) -> dict:
@@ -170,19 +154,21 @@ def _complete_openrouter_shared(
     user: str,
     models: list[str],
     timeout: int,
-    get_client: Callable[[], Any],
+    client: Any,
+    allow_paid: bool,
 ) -> tuple[str, str]:
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": user},
     ]
     try:
-        result = get_client().chat_completion(
+        result = client.chat_completion(
             messages=messages,
             models=models,
             timeout=timeout,
             temperature=0.2,
             caller=OPENROUTER_CALLER,
+            allow_paid=allow_paid,
         )
     except Exception as exc:
         raise LLMError(str(exc)) from exc
@@ -230,20 +216,26 @@ def complete(
         shared = _load_shared_openrouter()
         if shared is not None:
             pick_chain, get_client = shared
+            client = get_client()
             models = _openrouter_model_candidates(
-                pick_chain,
+                pick_chain(OPENROUTER_TASK_CLASS),
                 explicit_model=model,
                 env_model=env_model,
             )
+            allow_paid = any(not client.is_free_model(m) for m in (model, env_model) if m)
             text, used_model = _complete_openrouter_shared(
-                system, user, models, timeout, get_client
+                system, user, models, timeout, client, allow_paid
             )
             return text, chosen, used_model
 
         api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
         if not api_key or api_key.startswith("your_"):
             raise LLMError("OPENROUTER_API_KEY is missing in .env")
-        candidates = _legacy_openrouter_candidates(explicit_model=model, env_model=env_model)
+        candidates = _openrouter_model_candidates(
+            PREFERRED_OPENROUTER_MODELS,
+            explicit_model=model,
+            env_model=env_model,
+        )
         last_error: LLMError | None = None
         for used_model in candidates:
             try:
