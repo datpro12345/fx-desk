@@ -29,13 +29,6 @@ nfs.faireconomy.media (this week, no WARP)
 ## Quick start
 
 ```bash
-docker compose build
-docker compose run --rm weekly
-```
-
-Without Docker:
-
-```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/run_weekly_abcd.py --fmt csv
@@ -44,6 +37,7 @@ python scripts/run_weekly_abcd.py --fmt csv
 **100% Deterministic by default:** Generates Silver conformed partitions, Gold Kimball Mart, Google Calendar CSVs, and the weekly **Fact Pack** (`reports/weekly/{YYYY}-W{WW}-fact-pack.{json,md}`). Zero external LLM calls or API keys required.
 
 To run the optional LLM Outlook Report locally (or provide `.env` keys):
+
 ```bash
 cp .env.template .env
 python scripts/run_weekly_abcd.py --fmt csv --with-llm --lang en
@@ -57,9 +51,9 @@ Output with `--with-llm`: `reports/weekly/{YYYY}-W{WW}-macro-outlook.{lang}.md`
 | `OPENROUTER_MODEL` | optional. Models come from the shared router at `FM_OPENROUTER_TOOLS`; this model is tried last |
 | `REPORT_LANG` | optional, `en` or `vi` |
 
-Docker runs use the local fallback list in `scripts/analyst/llm_client.py` unless `FM_OPENROUTER_TOOLS` points to a mounted copy of the shared router.
+When `FM_OPENROUTER_TOOLS` is unset, the weekly outlook uses the local fallback list in `scripts/analyst/llm_client.py`.
 
-Deploy on Windows Docker Desktop or an Oracle Always Free VM: **[docs/docker.md](docs/docker.md)**.
+To keep code in one checkout and `data/` + `reports/` elsewhere (for example a separate data repo), set `FX_DESK_DATA_ROOT` to that project root or pass `--data-root`. Point `FX_DESK_DOTENV` at the `.env` that holds API keys.
 
 ## Layout
 
@@ -82,6 +76,6 @@ python -m pytest -q -m "not integration"
 
 ## Docs
 
-[Index](docs/INDEX.md) · [Scrape strategy](docs/scrape_strategy.md) · [Analyst roadmap](docs/analyst-roadmap.md) · [Docker](docs/docker.md)
+[Index](docs/INDEX.md) · [Scrape strategy](docs/scrape_strategy.md) · [Analyst roadmap](docs/analyst-roadmap.md)
 
 MIT — see [LICENSE](LICENSE). Do not commit `.env`.

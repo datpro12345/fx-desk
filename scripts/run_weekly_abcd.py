@@ -23,6 +23,19 @@ import os
 import sys
 from pathlib import Path
 
+
+def _bootstrap_data_root_from_argv() -> None:
+    for i, arg in enumerate(sys.argv):
+        if arg == "--data-root" and i + 1 < len(sys.argv):
+            os.environ.setdefault("FX_DESK_DATA_ROOT", sys.argv[i + 1])
+            return
+        if arg.startswith("--data-root="):
+            os.environ.setdefault("FX_DESK_DATA_ROOT", arg.split("=", 1)[1])
+            return
+
+
+_bootstrap_data_root_from_argv()
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -218,7 +231,8 @@ def run_abcd(
 
 
 def main() -> int:
-    load_dotenv()
+    dotenv_path = os.environ.get("FX_DESK_DOTENV", "").strip()
+    load_dotenv(Path(dotenv_path) if dotenv_path else None)
     today_year, today_week = current_iso_week()
     parser = argparse.ArgumentParser(
         description="ABCD: fetch this week (no WARP) → mart → weekly outlook",
@@ -276,9 +290,25 @@ def main() -> int:
         default=os.environ.get("REPORT_LANG", DEFAULT_LANG),
         help="Report language: vi, en, or any name (ja, es, …). Default: vi or REPORT_LANG",
     )
+    parser.add_argument(
+        "--data-root",
+        type=Path,
+        help="Project root whose data/ tree to use (default: repo root or FX_DESK_DATA_ROOT)",
+    )
     parser.add_argument("--reports-dir", type=Path)
     parser.add_argument("--mart-dir", type=Path, default=GOLD_MART_DIR)
     args = parser.parse_args()
+
+    if args.data_root is not None:
+        os.environ["FX_DESK_DATA_ROOT"] = str(args.data_root.expanduser().resolve())
+
+    reports_dir = args.reports_dir
+    if reports_dir is None and os.environ.get("FX_DESK_DATA_ROOT", "").strip():
+        reports_dir = Path(os.environ["FX_DESK_DATA_ROOT"]).expanduser().resolve() / "reports" / "weekly"
+
+    mart_dir = args.mart_dir
+    if args.data_root is not None:
+        mart_dir = args.data_root.expanduser().resolve() / "data" / "gold" / "mart"
 
     try:
         summary = run_abcd(
@@ -302,8 +332,8 @@ def main() -> int:
             timeout=args.timeout,
             suffix=args.suffix,
             lang=args.lang,
-            reports_dir=args.reports_dir,
-            mart_dir=args.mart_dir,
+            reports_dir=reports_dir,
+            mart_dir=mart_dir,
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("ABCD stopped: %s", exc)
