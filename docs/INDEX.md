@@ -1,7 +1,6 @@
 # Docs
 
 - **[HANDOFF.md](HANDOFF.md)** — phase close (YTD 2026 extract)
-- **[docker.md](docker.md)** — Docker Desktop (Windows) + Oracle Cloud Free VM
 - **[scrape_strategy.md](scrape_strategy.md)** — Cloudflare / Forex Factory playbook (reuse)
 - **[LOG.md](LOG.md)** — what we tried, failed, decided
 - **[llm-analyst-playbook.md](llm-analyst-playbook.md)** — shared LLM analyst playbook

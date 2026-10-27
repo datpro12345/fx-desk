@@ -17,7 +17,6 @@ Canonical playbook. Implemented in `scripts/extract/client.py` + `config.py`. Ex
 
 ```bash
 # This week only (no WARP): A fetch → B silver/mart → C Fact Pack → D outlook
-docker compose run --rm weekly          # see docs/docker.md
 .venv/bin/python scripts/run_weekly_abcd.py --fmt csv
 .venv/bin/python scripts/extract/fetch_weekly.py --fmt csv
 .venv/bin/python scripts/extract/fetch_bronze_months.py --year 2026 --months jan feb mar --gap 45 --strategy http

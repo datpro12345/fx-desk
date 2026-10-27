@@ -1,23 +1,37 @@
+import os
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+
+def project_root_for_data() -> Path:
+    """Directory that owns the ``data/`` tree (repo root or ``FX_DESK_DATA_ROOT``)."""
+    override = os.environ.get("FX_DESK_DATA_ROOT", "").strip()
+    if override:
+        return Path(override).expanduser().resolve()
+    return REPO_ROOT
+
+
+def _data_path(*parts: str) -> Path:
+    return project_root_for_data().joinpath("data", *parts)
+
+
 # Medallion paths (see docs/architecture.md)
-BRONZE_RAW_CALENDAR_DIR = REPO_ROOT / "data" / "bronze" / "raw" / "calendar"
-BRONZE_LANDING_DIR = REPO_ROOT / "data" / "bronze" / "landing" / "calendar_events"
-SILVER_EVENTS_DIR = REPO_ROOT / "data" / "silver" / "calendar_events"
-SILVER_CHANGES_DIR = REPO_ROOT / "data" / "silver" / "calendar_event_changes"
-GOLD_GCAL_DIR = REPO_ROOT / "data" / "gold" / "google_calendar"
-GOLD_MART_DIR = REPO_ROOT / "data" / "gold" / "mart"
+BRONZE_RAW_CALENDAR_DIR = _data_path("bronze", "raw", "calendar")
+BRONZE_LANDING_DIR = _data_path("bronze", "landing", "calendar_events")
+SILVER_EVENTS_DIR = _data_path("silver", "calendar_events")
+SILVER_CHANGES_DIR = _data_path("silver", "calendar_event_changes")
+GOLD_GCAL_DIR = _data_path("gold", "google_calendar")
+GOLD_MART_DIR = _data_path("gold", "mart")
 
 # ICT Institutional Layer (Phase 2) — public zero-key sources
-BRONZE_RAW_CFTC_DIR = REPO_ROOT / "data" / "bronze" / "raw" / "cftc"
-BRONZE_RAW_BINANCE_DIR = REPO_ROOT / "data" / "bronze" / "raw" / "binance"
-BRONZE_RAW_STOOQ_DIR = REPO_ROOT / "data" / "bronze" / "raw" / "stooq"
-BRONZE_RAW_YAHOO_DIR = REPO_ROOT / "data" / "bronze" / "raw" / "yahoo"
-SILVER_COT_DIR = REPO_ROOT / "data" / "silver" / "cot_positions"
-SILVER_OHLCV_DIR = REPO_ROOT / "data" / "silver" / "ohlcv"
-GOLD_ICT_DIR = REPO_ROOT / "data" / "gold" / "ict"
+BRONZE_RAW_CFTC_DIR = _data_path("bronze", "raw", "cftc")
+BRONZE_RAW_BINANCE_DIR = _data_path("bronze", "raw", "binance")
+BRONZE_RAW_STOOQ_DIR = _data_path("bronze", "raw", "stooq")
+BRONZE_RAW_YAHOO_DIR = _data_path("bronze", "raw", "yahoo")
+SILVER_COT_DIR = _data_path("silver", "cot_positions")
+SILVER_OHLCV_DIR = _data_path("silver", "ohlcv")
+GOLD_ICT_DIR = _data_path("gold", "ict")
 
 CFTC_SODA_URL = "https://data.cftc.gov/resource/6dca-aqww.json"
 CFTC_CONTRACT_CODES = {
@@ -48,12 +62,12 @@ YAHOO_SLEEP_SECONDS = 1.5
 COT_FETCH_WEEKS = 157  # 156w lookback + 1 prior week for reversal
 
 # Legacy paths (pre-medallion; do not write new files here)
-LEGACY_BRONZE_MONTHLY_DIR = REPO_ROOT / "data" / "bronze" / "monthly"
-LEGACY_SILVER_MONTHLY_DIR = REPO_ROOT / "data" / "silver" / "monthly"
+LEGACY_BRONZE_MONTHLY_DIR = _data_path("bronze", "monthly")
+LEGACY_SILVER_MONTHLY_DIR = _data_path("silver", "monthly")
 
 # Back-compat aliases used by older scripts
 BRONZE_MONTHLY_DIR = LEGACY_BRONZE_MONTHLY_DIR
-BRONZE_WEEKLY_DIR = REPO_ROOT / "data" / "bronze" / "weekly"
+BRONZE_WEEKLY_DIR = _data_path("bronze", "weekly")
 
 BRONZE_LANDING_COLUMNS = [
     "date",

@@ -26,14 +26,14 @@ from scripts.analyst.language import (
 )
 from scripts.analyst.llm_client import complete, load_dotenv
 from scripts.analyst.report_lint import lint_report
-from scripts.extract.config import GOLD_MART_DIR
+from scripts.extract.config import GOLD_MART_DIR, project_root_for_data
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 PROMPT_PATH = REPO_ROOT / "docs" / "analyst" / "prompts" / "weekly_soros_prompt.md"
 SEMANTICS_DIR = REPO_ROOT / "docs" / "analyst" / "semantics"
-DEFAULT_REPORTS_DIR = REPO_ROOT / "reports" / "weekly"
+DEFAULT_REPORTS_DIR = project_root_for_data() / "reports" / "weekly"
 CONTROL_FILES = (
     SEMANTICS_DIR / "macro_textbook.md",
     SEMANTICS_DIR / "metrics.yml",

@@ -206,4 +206,4 @@ Phase 1 **chỉ ship Weekly Outlook**. Daily Risk Flash **không làm**: Google 
    * A: `fetch_weekly` (nfs.faireconomy.media, không WARP, `strategy=http`, firefox135). Fail-stop nếu A/B lỗi — không gọi LLM.
    * B: bronze this-week → landing → silver `YYYY_Www.csv` → rebuild Kimball (weekly thắng overlap).
    * C+D: Fact Pack + outlook + lint. Tuần báo cáo lấy từ dữ liệu vừa fetch, không hard-code.
-   * Deploy: `docs/docker.md` (Docker Desktop Windows / Oracle Always Free).
+   * Deploy: macOS venv + `scripts/run_weekly_abcd.py` (scheduled via Firstmate `fx-weekly` job).

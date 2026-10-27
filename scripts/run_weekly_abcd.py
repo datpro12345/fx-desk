@@ -23,9 +23,16 @@ import os
 import sys
 from pathlib import Path
 
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+from scripts.analyst.llm_client import load_dotenv
+
+
+_dotenv_path = os.environ.get("FX_DESK_DOTENV", "").strip()
+load_dotenv(Path(_dotenv_path) if _dotenv_path else None)
 
 try:
     from scripts.analyst.ict_fact_pack import run_ict_pipeline
@@ -33,10 +40,9 @@ except ImportError:
     run_ict_pipeline = None
 
 from scripts.analyst.language import DEFAULT_LANG
-from scripts.analyst.llm_client import load_dotenv
 from scripts.analyst.run_weekly_report import current_iso_week, run_outlook
 from scripts.extract.backfill_actuals import backfill_actuals
-from scripts.extract.config import GOLD_MART_DIR
+from scripts.extract.config import GOLD_MART_DIR, project_root_for_data
 from scripts.extract.fetch_weekly import fetch_this_week
 from scripts.transform.validate_coverage import check_impact_coverage
 from scripts.transform.to_google_calendar import DEFAULT_SOURCE_TZ
@@ -142,7 +148,7 @@ def run_abcd(
     iso_week = week if week is not None else int(summary["B"]["iso_week"])
     summary["week_label"] = f"{iso_year}-W{iso_week:02d}"
 
-    reports = reports_dir or (REPO_ROOT / "reports" / "weekly")
+    reports = reports_dir or (project_root_for_data() / "reports" / "weekly")
     institutional = None
     if skip_ict or run_ict_pipeline is None:
         summary["C0"] = {
@@ -218,7 +224,6 @@ def run_abcd(
 
 
 def main() -> int:
-    load_dotenv()
     today_year, today_week = current_iso_week()
     parser = argparse.ArgumentParser(
         description="ABCD: fetch this week (no WARP) → mart → weekly outlook",

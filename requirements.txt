@@ -1,4 +1,4 @@
-# Weekly ABCD, Docker, and tests. Do not add Playwright here —
+# Weekly ABCD and tests. Do not add Playwright here —
 # historical HTML scrape is optional and not the default path.
 pandas>=2.0
 beautifulsoup4>=4.12

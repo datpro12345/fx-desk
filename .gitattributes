@@ -1,5 +1,1 @@
-# Keep container scripts LF so Windows clones do not break ENTRYPOINT
-docker/entrypoint.sh text eol=lf
-Dockerfile text eol=lf
-docker-compose.yml text eol=lf
 *.sh text eol=lf
